@@ -1,0 +1,891 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>אורי בים · ספירה לאחור</title>
+<link href="https://fonts.googleapis.com/css2?family=Amatic+SC:wght@400;700&display=swap" rel="stylesheet">
+<style>
+/* ══════════════════════════════════════════════════════
+   BASE
+══════════════════════════════════════════════════════ */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { width: 100%; height: 100%; overflow: hidden; }
+
+body {
+  font-family: 'Amatic SC', cursive;
+  background: #060d1a;
+  color: #e8f4fc;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  height: 100vh;
+  position: relative;
+  user-select: none;
+}
+
+/* ══════════════════════════════════════════════════════
+   CANVAS OCEAN BACKGROUND
+══════════════════════════════════════════════════════ */
+#ocean-canvas {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 0;
+}
+
+/* ══════════════════════════════════════════════════════
+   UI LAYERS
+══════════════════════════════════════════════════════ */
+#ui-layer {
+  position: relative;
+  z-index: 10;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  height: 100vh;
+  padding: 3vh 5vw 0;
+  pointer-events: none;
+}
+
+/* ── Top badge ── */
+#top-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(255,255,255,0.07);
+  border: 1px solid rgba(255,255,255,0.14);
+  border-radius: 40px;
+  padding: 6px 18px;
+  font-size: clamp(0.75rem, 2vw, 1rem);
+  letter-spacing: 0.2em;
+  color: rgba(200,230,255,0.75);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  margin-bottom: clamp(1.2vh, 2vh, 3vh);
+  animation: riseIn 1.4s cubic-bezier(.22,1,.36,1) both;
+}
+.badge-dot {
+  width: 7px; height: 7px; border-radius: 50%;
+  background: #5cf0c8;
+  box-shadow: 0 0 10px #5cf0c8;
+  animation: pulse-dot 2s ease-in-out infinite;
+}
+@keyframes pulse-dot { 0%,100%{transform:scale(1);opacity:1} 50%{transform:scale(1.5);opacity:0.5} }
+
+/* ── Countdown ── */
+#countdown {
+  display: flex;
+  gap: clamp(0.6rem, 3vw, 2.5rem);
+  align-items: flex-end;
+  animation: riseIn 1.4s cubic-bezier(.22,1,.36,1) 0.15s both;
+  margin-bottom: clamp(1.5vh, 2.5vh, 4vh);
+}
+.cnt-unit {
+  display: flex; flex-direction: column; align-items: center;
+}
+.cnt-num {
+  font-size: clamp(3.8rem, 13vw, 9rem);
+  font-weight: 700;
+  line-height: 0.92;
+  color: #fff;
+  text-shadow:
+    0 0 20px rgba(100,220,255,0.55),
+    0 0 60px rgba(100,220,255,0.25),
+    0 4px 8px rgba(0,0,0,0.6);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+}
+.cnt-lbl {
+  font-size: clamp(0.65rem, 1.6vw, 0.9rem);
+  letter-spacing: 0.25em;
+  color: rgba(180,220,255,0.55);
+  text-transform: uppercase;
+  margin-top: 3px;
+}
+.cnt-colon {
+  font-size: clamp(2.5rem, 9vw, 6rem);
+  font-weight: 700;
+  color: rgba(150,210,255,0.4);
+  line-height: 1;
+  padding-bottom: 0.22em;
+  animation: colonPulse 1s ease-in-out infinite;
+}
+@keyframes colonPulse { 0%,100%{opacity:0.4} 50%{opacity:0.9} }
+
+/* ── Uri Quote ── */
+#quote-wrap {
+  max-width: min(88vw, 680px);
+  text-align: center;
+  animation: riseIn 1.4s cubic-bezier(.22,1,.36,1) 0.3s both;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.6em;
+}
+#quote-ornament {
+  font-size: 1.8rem;
+  color: rgba(100,220,200,0.4);
+  line-height: 1;
+}
+#uri-quote {
+  font-size: clamp(1.05rem, 3.2vw, 1.7rem);
+  font-weight: 700;
+  line-height: 1.4;
+  color: rgba(235,248,255,0.95);
+  text-shadow: 0 0 30px rgba(80,200,255,0.3), 0 2px 8px rgba(0,0,0,0.5);
+  transition: opacity 0.7s ease, transform 0.7s ease;
+}
+#next-qt-row {
+  font-size: clamp(0.65rem, 1.8vw, 0.88rem);
+  color: rgba(180,220,255,0.45);
+  letter-spacing: 0.08em;
+}
+#next-qt { color: rgba(100,230,200,0.75); font-weight: 700; }
+
+/* ── Bottom voyage bar ── */
+#voyage-section {
+  position: fixed;
+  bottom: 0; left: 0; right: 0;
+  z-index: 20;
+  padding: 0 5vw clamp(1.2vh, 2.5vh, 3vh);
+  pointer-events: none;
+  animation: riseIn 1.4s cubic-bezier(.22,1,.36,1) 0.5s both;
+}
+
+#voyage-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.5em;
+  font-size: clamp(0.8rem, 2.5vw, 1.1rem);
+  color: rgba(180,220,255,0.6);
+}
+#voyage-header .endpoint { font-weight: 700; }
+#voyage-header #pct-label {
+  font-size: clamp(0.75rem, 2vw, 1rem);
+  color: rgba(100,230,200,0.8);
+  letter-spacing: 0.1em;
+}
+
+/* The track */
+#voyage-track {
+  position: relative;
+  height: 36px;
+  background: rgba(10,30,60,0.55);
+  border-radius: 100px;
+  border: 1px solid rgba(100,200,255,0.18);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  overflow: visible;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.06),
+    0 4px 24px rgba(0,0,0,0.4);
+}
+
+/* Animated track lines (sea texture) */
+#voyage-track::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 100px;
+  background: repeating-linear-gradient(
+    90deg,
+    transparent 0px,
+    transparent 28px,
+    rgba(100,200,255,0.04) 28px,
+    rgba(100,200,255,0.04) 29px
+  );
+  overflow: hidden;
+}
+
+/* Glow fill */
+#voyage-fill {
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  border-radius: 100px;
+  background: linear-gradient(
+    90deg,
+    rgba(30,140,200,0.5) 0%,
+    rgba(60,190,240,0.65) 70%,
+    rgba(100,230,210,0.8) 100%
+  );
+  box-shadow: 0 0 20px rgba(60,200,240,0.4), inset 0 1px 0 rgba(255,255,255,0.15);
+  transition: width 1s linear;
+  min-width: 8px;
+}
+
+/* Wave canvas inside track */
+#wave-canvas {
+  position: absolute;
+  inset: 0;
+  border-radius: 100px;
+  width: 100%;
+  height: 100%;
+  opacity: 0.45;
+  mix-blend-mode: screen;
+  pointer-events: none;
+}
+
+/* Ship emoji on track */
+#ship-icon {
+  position: absolute;
+  top: 50%;
+  /* left set by JS */
+  transform: translate(-50%, -56%);
+  font-size: clamp(1.5rem, 4vw, 2.2rem);
+  filter:
+    drop-shadow(0 0 8px rgba(80,220,255,0.9))
+    drop-shadow(0 0 20px rgba(80,220,255,0.4));
+  animation: shipBob 2.8s ease-in-out infinite;
+  z-index: 5;
+  pointer-events: none;
+}
+@keyframes shipBob {
+  0%,100%{ transform: translate(-50%, -60%) rotate(-1deg); }
+  25%{ transform: translate(-50%, -50%) rotate(1deg); }
+  75%{ transform: translate(-50%, -55%) rotate(-0.5deg); }
+}
+
+/* Anchor icon */
+.track-anchor {
+  position: absolute;
+  top: 50%; transform: translateY(-50%);
+  font-size: 1.1rem;
+  opacity: 0.55;
+}
+.track-anchor.left { left: 6px; }
+.track-anchor.right { right: 8px; }
+
+/* ── Animations ── */
+@keyframes riseIn {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ── Responsive ── */
+@media (max-height: 650px) {
+  .cnt-num { font-size: clamp(2.8rem, 10vw, 5.5rem); }
+  #uri-quote { font-size: clamp(0.9rem, 2.8vw, 1.4rem); }
+  #quote-ornament { display: none; }
+}
+@media (max-width: 420px) {
+  .cnt-colon { display: none; }
+  #countdown { gap: 0.4rem; }
+}
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════
+  OCEAN CANVAS (full background)
+════════════════════════════════════ -->
+<canvas id="ocean-canvas"></canvas>
+
+<!-- ═══════════════════════════════════
+  UI
+════════════════════════════════════ -->
+<div id="ui-layer">
+
+  <div id="top-badge">
+    <span class="badge-dot"></span>
+    <span> ללב שלי · ספירה לאחור</span>
+  </div>
+
+  <div id="countdown">
+    <div class="cnt-unit">
+      <div class="cnt-num" id="cd-days">00</div>
+      <div class="cnt-lbl">ימים</div>
+    </div>
+    <div class="cnt-colon">:</div>
+    <div class="cnt-unit">
+      <div class="cnt-num" id="cd-hours">00</div>
+      <div class="cnt-lbl">שעות</div>
+    </div>
+    <div class="cnt-colon">:</div>
+    <div class="cnt-unit">
+      <div class="cnt-num" id="cd-mins">00</div>
+      <div class="cnt-lbl">דקות</div>
+    </div>
+    <div class="cnt-colon">:</div>
+    <div class="cnt-unit">
+      <div class="cnt-num" id="cd-secs">00</div>
+      <div class="cnt-lbl">שניות</div>
+    </div>
+  </div>
+
+  <div id="quote-wrap">
+    <div id="quote-ornament">〜 ⚓ 〜</div>
+    <div id="uri-quote">טוען...</div>
+    <div id="next-qt-row">משפט חדש בעוד: <span id="next-qt">--:--:--</span></div>
+  </div>
+
+</div><!-- /ui-layer -->
+
+<!-- ═══════════════════════════════════
+  VOYAGE BAR
+════════════════════════════════════ -->
+<div id="voyage-section">
+  <div id="voyage-header">
+    <span class="endpoint">🏝 יעד</span>
+    <span id="pct-label">0%</span>
+    <span class="endpoint">⚓ יציאה</span>
+  </div>
+  <div id="voyage-track">
+    <canvas id="wave-canvas"></canvas>
+    <div id="voyage-fill"></div>
+    <div id="ship-icon">🚢</div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════
+  SCRIPT
+═══════════════════════════════════════════════════════════ -->
+<script>
+'use strict';
+
+/* ══════════════════════════════════════════════════════════════
+   ✏️  EDIT YOUR QUOTES HERE — one string per line inside the array
+══════════════════════════════════════════════════════════════ */
+const URI_FACTS = [
+  "אורי גרוסבך לא מנווטת לפי הכוכבים. הכוכבים מנווטים לפי אורי גרוסבך.",
+  "כשאורי גרוסבך משליכה עוגן, כדור הארץ עוצר מלכת.",
+  "מפות ימיות לא מראות לאורי גרוסבך איפה היא. הן מראות לאחרים איפה היא הייתה.",
+  "כשהים סוער, אורי גרוסבך מביטה בו. הים מתנצל ומתיישר.",
+  "הרוח לא מנשבת – היא מנסה להדביק את הקצב של אורי גרוסבך.",
+  "אורי גרוסבך לא שטה בים. הים זז מתחתיה מרצון.",
+  "אורי גרוסבך את כל כך מכונה שאני מתחיל לחשוד שאת ספינה בעצמך",
+  "GPS נוצר רק כדי להסביר לאחרים איפה אורי גרוסבך נמצאת.",
+  "הטיטניק לא טבעה. היא פשוט לא רצתה להיפגש עם אורי גרוסבך.",
+  "אורי גרוסבך אני בטוח שחצי מהספינות עברו טסט רק כי התביישו לאכזב אותך",
+  "אורי גרוסבך לא צריכה מצפן. הצפון משנה כיוון בשבילה.",
+  "בים אין מדינות. יש רק שטחים שאורי גרוסבך עדיין לא כבשה.",
+  "הגאות והשפל הם בעצם רק ניסיונות של הים להתאים את עצמו לגובה הגלים שאורי יוצרת.",
+  "הקרחון שפגע בטיטניק ברח ממרחק של 200 מייל כששמע שאורי יוצאת להפלגה.",
+  "אורי גרוסבך לא עוברת את קו המשווה. קו המשווה עובר דרכה מכבוד.",
+  "חיל הים לא שולח לה פקודות. הוא שולח לה ברכות.",
+  "אורי גרוסבך לא צריכה מנוע. הים דוחף אותה מפחד.",
+  "הערפל לא מסתיר דברים מאורי. הוא מתפזר במבוכה כשהיא מתקרבת.",
+  "עוגנים לא מחזיקים את אורי גרוסבך. אורי גרוסבך מחזיקה את העוגנים ולפעמים מרימה אותם.",
+  "כוכב הצפון נשאר קבוע רק כי הוא יודע שזה מה שאורי מצפה ממנו.",
+  "הים התיכון נקרא 'תיכון' כי אורי גרוסבך החליטה",
+  "ניוטון גילה כוח משיכה. אורי גרוסבך גילתה את הכיוון – ואז שינתה אותו.",
+  "פירטים שמעו שהיא בדרך והחליטו להפוך למלצרים בסוזנקה.",
+  "הים האדום נאדם מבושה כשאורי גרוסבך ראתה את הנסיגה שלו.",
+  "קפטן אמריקה לוחץ יד לאורי גרוסבך. היא זו שנתנה לו את ההיתר.",
+  "אורי גרוסבך לא מפחדת מגלים גבוהים. הגלים מפחדים ממנה וזזים נמוך.",
+  "כשאורי גרוסבך בקונטרול הים בעצמו מבקש אישור לפני שהוא עושה גלים.",
+  "מחשבי ניווט רואים את אורי ומתחילים לשכתב את החוקים של הפיזיקה.",
+  "אורי גרוסבך לא צריכה גלגל הצלה. היא מסתכלת לכיוון – והספינה מבינה.",
+  "אורי גרוסבך כל כך הרבה זמן בים שה-Waze מסמן אותך כנתיב שיט.",
+  "יוון ביקשה ממנה שמות לאיים שהיא גילתה. אורי גרוסבך אמרה: 'תחכו, אני עוד לא סיימתי'.",
+  "אורי גרוסבך לא מבקשת ויזה. הגבולות מבקשים סליחה.",
+  "אורי גרוסבך, בבטש כל כך ארוך שהדגים קוראים לך “המפקדת”.",
+  "החיבה של אורי לים הדדית. אבל כולם יודעים שהיא אוהבת קצת יותר.",
+  "מגדלורים לא מאירים לאורי. הם מקבלים ממנה אור.",
+  "תהום הים לא מפחידה את אורי גרוסבך. תהום הים מפחדת ממנה.",
+  "כשאורי שורקת, הרוח עוצרת, מקשיבה, ואז מבקשת הנחיות.",
+  "אורי גרוסבך הגיעה לאמריקה לפני קולומבוס – ואז חזרה כי היה לה משעמם.",
+  "שחפים לא מצייצים ליד הספינה שלה. הם שרים את 'התקווה' בשקט.",
+  "כוחות הטבע עוצרים לרגע כשאורי גרוסבך מרימה טלפון לצלם.",
+  "אורי גרוסבך לא עוצרת ליד מזח. המזח בא ומתייצב לידה.",
+  "כשאורי חוזרת לנמל, הים כבר מתחיל להתגעגע.",
+  "פוסידון לא נתן השראה לאורי. אורי נתנה השראה לפוסידון.",
+  "אורי לא מודדת עומק ים. הים מודד את עצמו לפי הגובה של של אורי.",
+    "אורי גרוסבך, אם ספינה לא עוברת ביקורת אצלך היא משנה מקצוע והופכת לרפסודה מהבושה.",
+  "אורי גרוסבך, בבטש כל כך ארוך שהשחפים מצדיעים לך בדרך לעבודה.",
+  "פעם הייתה סערה בים, אבל היא נרגעה מכבוד כששמעה שאורי גרוסבך בדרך.",
+ "אורי גרוסבך, כל כך מקצועית שהמכמ בודק איתך אם מה שהוא רואה באמת קיים.",
+  "כשאורי שואלת 'כמה עוד?' – הרוח, הגלים והזמן כולם עונים: 'כמה שתרצי, מפקדת.'"
+];
+/* ══════════════════════════════════════════════
+   END OF EDITABLE QUOTES SECTION
+══════════════════════════════════════════════ */
+
+
+/* ──────────────────────────────────────────────
+   CONFIG — תאריכי יעד
+─────────────────────────────────────────────── */
+// Destination: Thursday the 11th at 06:00
+// Finds the nearest upcoming date that is:
+//   - the 11th of its month  AND  a Thursday (day 4)
+function getDestination() {
+  const now = new Date();
+  // Start searching from today
+  let d = new Date(now.getFullYear(), now.getMonth(), 11, 6, 0, 0, 0);
+  // Walk day by day until we land on the 11th of some month that is a Thursday
+  for (let tries = 0; tries < 400; tries++) {
+    if (d > now && d.getDate() === 11 && d.getDay() === 4) return d;
+    d.setDate(d.getDate() + 1);
+    // If we've gone past the 11th, jump to next month's 11th
+    if (d.getDate() === 12) {
+      d = new Date(d.getFullYear(), d.getMonth() + 1, 11, 6, 0, 0, 0);
+    }
+  }
+  // Fallback: just find next Thursday
+  d = new Date(now);
+  while (d.getDay() !== 4) d.setDate(d.getDate() + 1);
+  d.setHours(6, 0, 0, 0);
+  return d;
+}
+
+// Journey start: Sunday 00:00 of the week that contains the destination
+function getJourneyStart(dest) {
+  const d = new Date(dest);
+  d.setDate(d.getDate() - d.getDay()); // roll back to Sunday
+  d.setHours(0, 0, 0, 0);
+  return d;
+}
+
+const DEST  = getDestination();
+const START = getJourneyStart(DEST);
+const QUOTE_INTERVAL_MS = 5 * 60 * 60 * 1000; // 5 hours
+
+/* ──────────────────────────────────────────────
+   HELPERS
+─────────────────────────────────────────────── */
+const pad = n => String(Math.floor(n)).padStart(2, '0');
+
+function getProgress(now) {
+  const total   = DEST.getTime() - START.getTime();
+  const elapsed = now - START.getTime();
+  return Math.min(1, Math.max(0, elapsed / total));
+}
+
+function getQuoteIndex(now) {
+  const elapsed = now - START.getTime();
+  return Math.floor(elapsed / QUOTE_INTERVAL_MS) % URI_FACTS.length;
+}
+
+function msToNextQuote(now) {
+  const elapsed = now - START.getTime();
+  return QUOTE_INTERVAL_MS - (elapsed % QUOTE_INTERVAL_MS);
+}
+
+/* ──────────────────────────────────────────────
+   OCEAN CANVAS RENDERER
+   Full-screen animated day/night ocean scene
+─────────────────────────────────────────────── */
+(function OceanEngine() {
+  const canvas = document.getElementById('ocean-canvas');
+  const ctx = canvas.getContext('2d');
+  let W, H, isDay, t = 0;
+  const stars = [];
+
+  // Pre-generate stars
+  for (let i = 0; i < 200; i++) {
+    stars.push({
+      x: Math.random(),
+      y: Math.random() * 0.58,
+      r: Math.random() * 1.3 + 0.3,
+      phase: Math.random() * Math.PI * 2,
+      speed: 0.4 + Math.random() * 1.2,
+    });
+  }
+
+  // Cloud shapes (procedural blobs)
+  const clouds = [
+    { x: 0.12, y: 0.10, w: 0.22, h: 0.07, speed: 0.000012 },
+    { x: 0.55, y: 0.07, w: 0.18, h: 0.05, speed: 0.000008 },
+    { x: 0.78, y: 0.14, w: 0.14, h: 0.045, speed: 0.000015 },
+    { x: 0.35, y: 0.16, w: 0.12, h: 0.04, speed: 0.00001 },
+  ];
+
+  // Wave layers (background → foreground)
+  const waveLayers = [
+    { amp: 0.012, freq: 1.8, speed: 0.28, alpha: 0.18, color: null },
+    { amp: 0.018, freq: 2.4, speed: 0.42, alpha: 0.22, color: null },
+     { amp: 0.018, freq: 3.2, speed: 0.42, alpha: 0.22, color: null },
+  //  { amp: 0.028, freq: 3.2, speed: 0.60, alpha: 0.30, color: null },
+   // { amp: 0.040, freq: 4.5, speed: 0.85, alpha: 0.50, color: null },
+ //   { amp: 0.055, freq: 5.8, speed: 1.00, alpha: 0.6, color: null },
+        { amp: 0.012, freq: 1.8, speed: 0.28, alpha: 0.18, color: null },
+            { amp: 0.012, freq: 1.8, speed: 0.28, alpha: 0.18, color: null },
+  ];
+
+  function resize() {
+    W = canvas.width  = window.innerWidth;
+    H = canvas.height = window.innerHeight;
+  }
+  resize();
+  window.addEventListener('resize', resize);
+
+  function lerp(a, b, r) { return a + (b - a) * r; }
+
+  function horizonY() { return H * 0.52; }
+
+  function drawSky(day, blend) {
+    // Night colours
+    const nTop = [6, 10, 28];
+    const nBot = [8, 22, 60];
+    // Day colours
+    const dTop = [20, 100, 200];
+    const dBot = [100, 185, 230];
+
+    const top = nTop.map((v,i) => Math.round(lerp(v, dTop[i], blend)));
+    const bot = nBot.map((v,i) => Math.round(lerp(v, dBot[i], blend)));
+
+    const grad = ctx.createLinearGradient(0, 0, 0, horizonY());
+    grad.addColorStop(0, `rgb(${top})`);
+    grad.addColorStop(1, `rgb(${bot})`);
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, W, horizonY() + 2);
+  }
+
+  function drawSea(day, blend) {
+    const hy = horizonY();
+    // Night sea
+    const nTop = [8, 25, 55];
+    const nBot = [4, 12, 28];
+    // Day sea
+    const dTop = [18, 105, 175];
+    const dBot = [8, 55, 110];
+
+    const top = nTop.map((v,i) => Math.round(lerp(v, dTop[i], blend)));
+    const bot = nBot.map((v,i) => Math.round(lerp(v, dBot[i], blend)));
+
+    const grad = ctx.createLinearGradient(0, hy, 0, H);
+    grad.addColorStop(0, `rgb(${top})`);
+    grad.addColorStop(1, `rgb(${bot})`);
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, hy, W, H - hy);
+  }
+
+  function drawStars(blend) {
+    const opacity = 1 - blend; // hidden during day
+    if (opacity <= 0.01) return;
+    stars.forEach(s => {
+      const twinkle = 0.5 + 0.5 * Math.sin(t * s.speed + s.phase);
+      ctx.beginPath();
+      ctx.arc(s.x * W, s.y * H, s.r, 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(255,255,255,${twinkle * opacity * 0.85})`;
+      ctx.fill();
+    });
+  }
+
+  function drawCelestial(blend) {
+    const hy = horizonY();
+    // Sun arcs from bottom-right to top-centre during day
+    // Moon sits top-left at night
+    const nightMX = W * 0.2, nightMY = H * 0.1;
+    const dayMX   = W * 0.5, dayMY   = H * 0.08;
+
+    const mx = lerp(nightMX, dayMX, blend);
+    const my = lerp(nightMY, dayMY, blend);
+    const r  = lerp(28, 46, blend);
+
+    ctx.save();
+    if (blend > 0.5) {
+      // Sun
+      const glow = ctx.createRadialGradient(mx, my, 0, mx, my, r * 4);
+      glow.addColorStop(0,   `rgba(255,230,100,${0.35 * blend})`);
+      glow.addColorStop(0.4, `rgba(255,200,60,${0.15 * blend})`);
+      glow.addColorStop(1,   'rgba(255,180,40,0)');
+      ctx.fillStyle = glow;
+      ctx.beginPath();
+      ctx.arc(mx, my, r * 4, 0, Math.PI * 2);
+      ctx.fill();
+
+      const sun = ctx.createRadialGradient(mx - r*0.2, my - r*0.2, 0, mx, my, r);
+      sun.addColorStop(0, '#fff9e0');
+      sun.addColorStop(1, '#ffc840');
+      ctx.beginPath();
+      ctx.arc(mx, my, r, 0, Math.PI * 2);
+      ctx.fillStyle = sun;
+      ctx.fill();
+    } else {
+      // Moon
+      const moonGlow = ctx.createRadialGradient(mx, my, 0, mx, my, r * 5);
+      moonGlow.addColorStop(0,   `rgba(200,210,160,${0.12 * (1-blend)})`);
+      moonGlow.addColorStop(1,   'rgba(200,210,160,0)');
+      ctx.fillStyle = moonGlow;
+      ctx.beginPath();
+      ctx.arc(mx, my, r * 5, 0, Math.PI * 2);
+      ctx.fill();
+
+      const moon = ctx.createRadialGradient(mx - r*0.15, my - r*0.1, r*0.1, mx, my, r);
+      moon.addColorStop(0, '#f0e8c0');
+      moon.addColorStop(1, '#c8bc90');
+      ctx.beginPath();
+      ctx.arc(mx, my, r, 0, Math.PI * 2);
+      ctx.fillStyle = moon;
+      ctx.fill();
+
+      // Moon shadow crescent
+      ctx.beginPath();
+      ctx.arc(mx + r * 0.28, my - r * 0.1, r * 0.85, 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(${Math.round(lerp(6,8,0))},${Math.round(lerp(10,22,0))},${Math.round(lerp(28,60,0))},${0.82 * (1-blend)})`;
+      ctx.fill();
+    }
+
+    // Reflection on water
+    const reflY = hy + 6;
+    const refGrad = ctx.createRadialGradient(mx, reflY, 0, mx, reflY, r * 3);
+    const refAlpha = blend > 0.5 ? blend * 0.18 : (1-blend) * 0.1;
+    refGrad.addColorStop(0, `rgba(255,240,180,${refAlpha})`);
+    refGrad.addColorStop(1, 'rgba(255,240,180,0)');
+    ctx.fillStyle = refGrad;
+    ctx.fillRect(mx - r*3, reflY, r*6, H - reflY);
+
+    ctx.restore();
+  }
+
+  function drawClouds(blend) {
+    const opacity = blend; // only visible in day
+    if (opacity < 0.01) return;
+    const now = Date.now();
+    clouds.forEach(c => {
+      const cx = ((c.x + now * c.speed) % 1.3 - 0.15) * W;
+      const cy = c.y * H;
+      const cw = c.w * W;
+      const ch = c.h * H;
+
+      ctx.save();
+      ctx.globalAlpha = opacity * 0.65;
+
+      // Puffball blobs
+      const blobs = [
+        [0, 0, ch * 0.9],
+        [cw * 0.22, -ch * 0.18, ch * 0.75],
+        [cw * 0.44, -ch * 0.05, ch * 0.82],
+        [cw * 0.66, -ch * 0.15, ch * 0.68],
+        [cw * 0.88, ch * 0.04, ch * 0.6],
+      ];
+      blobs.forEach(([bx, by, br]) => {
+        const g = ctx.createRadialGradient(cx+bx, cy+by, 0, cx+bx, cy+by, br);
+        g.addColorStop(0, 'rgba(255,255,255,0.95)');
+        g.addColorStop(0.6, 'rgba(240,248,255,0.75)');
+        g.addColorStop(1, 'rgba(220,235,255,0)');
+        ctx.beginPath();
+        ctx.arc(cx + bx, cy + by, br, 0, Math.PI * 2);
+        ctx.fillStyle = g;
+        ctx.fill();
+      });
+      ctx.restore();
+    });
+  }
+
+  function drawHorizonGlow(blend) {
+    const hy = horizonY();
+    const grad = ctx.createLinearGradient(0, hy - 20, 0, hy + 20);
+    const alpha = 0.08 + blend * 0.12;
+    grad.addColorStop(0, `rgba(255,255,255,0)`);
+    grad.addColorStop(0.5, `rgba(255,255,255,${alpha})`);
+    grad.addColorStop(1, `rgba(255,255,255,0)`);
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, hy - 20, W, 40);
+  }
+
+  function waveY(layer, x, time) {
+    return Math.sin(x * layer.freq * 0.008 + time * layer.speed) * layer.amp * H
+         + Math.sin(x * layer.freq * 0.013 - time * layer.speed * 0.7 + 1.2) * layer.amp * H * 0.4;
+  }
+
+  function drawWaves(blend) {
+    const hy = horizonY();
+    const nWave = [30, 80, 140];   // night wave colour
+    const dWave = [60, 160, 220];  // day wave colour
+
+    waveLayers.forEach((layer, li) => {
+      const frac = (li + 1) / waveLayers.length;
+      const baseY = hy + (H - hy) * frac * 0.85;
+      const r = Math.round(lerp(nWave[0], dWave[0], blend));
+      const g = Math.round(lerp(nWave[1], dWave[1], blend));
+      const b = Math.round(lerp(nWave[2], dWave[2], blend));
+
+      ctx.beginPath();
+      ctx.moveTo(0, H);
+      ctx.lineTo(0, baseY + waveY(layer, 0, t));
+
+      for (let x = 1; x <= W; x += 3) {
+        ctx.lineTo(x, baseY + waveY(layer, x, t));
+      }
+      ctx.lineTo(W, H);
+      ctx.closePath();
+
+      const wGrad = ctx.createLinearGradient(0, baseY - 20, 0, H);
+      wGrad.addColorStop(0, `rgba(${r},${g},${b},${layer.alpha})`);
+      wGrad.addColorStop(1, `rgba(${r},${g},${b},0.04)`);
+      ctx.fillStyle = wGrad;
+      ctx.fill();
+
+      // Foam crest
+      ctx.beginPath();
+      for (let x = 0; x <= W; x += 3) {
+        const y = baseY + waveY(layer, x, t);
+        x === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+      }
+      ctx.strokeStyle = `rgba(255,255,255,${layer.alpha * 0.5})`;
+      ctx.lineWidth = li === waveLayers.length - 1 ? 1.5 : 0.8;
+      ctx.stroke();
+    });
+
+    // Shimmer sparkles on top wave
+    const topLayer = waveLayers[waveLayers.length - 1];
+    const sparkleFrac = (waveLayers.length) / waveLayers.length;
+    const sparkleBase = hy + (H - hy) * sparkleFrac * 0.85;
+    for (let i = 0; i < 18; i++) {
+      const sx = (i / 18 + t * 0.04) % 1;
+      const sy = sparkleBase + waveY(topLayer, sx * W, t);
+      const sa = 0.3 + 0.4 * Math.sin(t * 3 + i * 1.7);
+      ctx.beginPath();
+      ctx.arc(sx * W, sy - 3, 1.2, 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(255,255,255,${sa * (0.4 + blend * 0.4)})`;
+      ctx.fill();
+    }
+  }
+
+  // Determine day blend (0=full night, 1=full day) with soft twilight
+  function getDayBlend(hour, minute) {
+    const h = hour + minute / 60;
+    if (h < 4.5 || h >= 20.5) return 0;
+    if (h >= 7 && h < 18)     return 1;
+    if (h < 7)  return (h - 4.5) / 2.5;   // dawn 04:30–07:00
+    return (20.5 - h) / 2.5;              // dusk 18:00–20:30
+  }
+
+  function frame() {
+    t += 0.016;
+    const now  = new Date();
+    const blend = getDayBlend(now.getHours(), now.getMinutes());
+
+    ctx.clearRect(0, 0, W, H);
+    drawSky(blend > 0.5, blend);
+    drawStars(blend);
+    drawCelestial(blend);
+    drawClouds(blend);
+    drawHorizonGlow(blend);
+    drawSea(blend > 0.5, blend);
+    drawWaves(blend);
+
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+})();
+
+
+/* ──────────────────────────────────────────────
+   TRACK WAVE CANVAS (miniature waves inside bar)
+─────────────────────────────────────────────── */
+(function TrackWaves() {
+  const canvas = document.getElementById('wave-canvas');
+  let tw = 0;
+
+  function resize() {
+    const track = document.getElementById('voyage-track');
+    canvas.width  = track.offsetWidth;
+    canvas.height = track.offsetHeight;
+  }
+  resize();
+  window.addEventListener('resize', resize);
+
+  function frame() {
+    tw += 0.04;
+    const ctx = canvas.getContext('2d');
+    const W = canvas.width, H = canvas.height;
+    ctx.clearRect(0, 0, W, H);
+
+    for (let l = 0; l < 3; l++) {
+      const freq  = 0.055 + l * 0.03;
+      const amp   = 2.5 + l * 1.5;
+      const speed = 0.9 + l * 0.4;
+      const baseY = H * (0.35 + l * 0.22);
+      const alpha = 0.18 + l * 0.12;
+
+      ctx.beginPath();
+      ctx.moveTo(0, H);
+      ctx.lineTo(0, baseY + Math.sin(tw * speed) * amp);
+      for (let x = 1; x <= W; x++) {
+        ctx.lineTo(x, baseY + Math.sin(x * freq + tw * speed) * amp
+                             + Math.sin(x * freq * 1.7 - tw * speed * 0.6) * amp * 0.4);
+      }
+      ctx.lineTo(W, H);
+      ctx.closePath();
+      ctx.fillStyle = `rgba(100,210,255,${alpha})`;
+      ctx.fill();
+    }
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+})();
+
+
+/* ──────────────────────────────────────────────
+   SHIP POSITION — correctly proportional
+   The ship emoji sits at left = pct% of track width,
+   clamped so it stays visible at both ends.
+─────────────────────────────────────────────── */
+function updateShip(pct) {
+  const track  = document.getElementById('voyage-track');
+  const ship   = document.getElementById('ship-icon');
+  const fill   = document.getElementById('voyage-fill');
+
+  const trackW = track.offsetWidth;
+  const shipW  = ship.offsetWidth || 36;
+
+  // Clamp so ship doesn't overflow track edges
+  const minLeft = shipW / 2;
+  const maxLeft = trackW - shipW / 2;
+  const rawLeft = pct * trackW;
+  const clampedLeft = Math.min(maxLeft, Math.max(minLeft, rawLeft));
+
+  ship.style.left = clampedLeft + 'px';
+
+  // Fill goes from 0 to ship centre
+  fill.style.width = Math.max(0, Math.min(trackW, rawLeft)) + 'px';
+}
+
+
+/* ──────────────────────────────────────────────
+   MAIN TICK — countdown, quote, progress
+─────────────────────────────────────────────── */
+let lastQuoteIdx = -1;
+const quoteEl = document.getElementById('uri-quote');
+
+function tick() {
+  const now        = Date.now();
+  const remaining  = DEST.getTime() - now;
+
+  /* ── Countdown ── */
+  const safeSecs = Math.max(0, Math.floor(remaining / 1000));
+  document.getElementById('cd-days').textContent  = pad(Math.floor(safeSecs / 86400));
+  document.getElementById('cd-hours').textContent = pad(Math.floor(safeSecs / 3600) % 24);
+  document.getElementById('cd-mins').textContent  = pad(Math.floor(safeSecs / 60)   % 60);
+  document.getElementById('cd-secs').textContent  = pad(safeSecs % 60);
+
+  /* ── Quote ── */
+  const qi = getQuoteIndex(now);
+  if (qi !== lastQuoteIdx) {
+    lastQuoteIdx = qi;
+    quoteEl.style.opacity   = '0';
+    quoteEl.style.transform = 'translateY(8px)';
+    setTimeout(() => {
+      quoteEl.textContent     = `"${URI_FACTS[qi]}"`;
+      quoteEl.style.opacity   = '1';
+      quoteEl.style.transform = 'translateY(0)';
+    }, 450);
+  } else if (quoteEl.textContent === 'טוען...') {
+    quoteEl.textContent     = `"${URI_FACTS[qi]}"`;
+    quoteEl.style.opacity   = '1';
+    quoteEl.style.transform = 'translateY(0)';
+  }
+
+  const msLeft = msToNextQuote(now);
+  const qs     = Math.floor(msLeft / 1000);
+  document.getElementById('next-qt').textContent =
+    `${pad(Math.floor(qs/3600))}:${pad(Math.floor(qs/60)%60)}:${pad(qs%60)}`;
+
+  /* ── Progress bar ── */
+  const pct = getProgress(now);
+  document.getElementById('pct-label').textContent = Math.round(pct * 100) + '%';
+  updateShip(pct);
+}
+
+// First tick after short delay (so DOM is fully laid out for ship width calc)
+setTimeout(() => { tick(); setInterval(tick, 1000); }, 200);
+</script>
+</body>
+</html>
